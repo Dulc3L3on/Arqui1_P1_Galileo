@@ -1,0 +1,99 @@
+#include <Stepper.h>
+#define STEPS 96
+#define SPEED 500
+
+const int Trigger = 2;
+const int Echo = 3;
+Stepper stepper(STEPS,4,5,6,0);
+
+//highs on centimeters
+const double H1 = 14;//15.53
+const double H2 = 30;
+const double H3 = 43;//42.43
+
+long time;
+long distance =0;//long distance;
+
+
+byte rows[4] = {13,12,11,10};
+byte columns[4] = {9,8,7,1};
+char opciones[4][4] = {
+                  	    {'1','2','3','A'},
+	                    {'4','5','6','B'},
+    	                    {'7','8','9','C'},
+        	            {'*','0','#','D'}
+                      };
+                      
+Keypad teclado = Keypad(makeKeymap(opciones), rows, columns, 4, 4);
+char boton;
+
+void setupt(){
+  Serial.begin(9600);
+  
+  pinMode(Trigger, OUTPUT);
+  pinMode(Echo, INPUT);
+  digitalWrite(Trigger, LOW);
+  
+  stepper.setSpeed(SPEED);  
+}
+
+void loop(){
+  boton = teclado.getKey();
+
+  digitalWrite(Trigger, HIGH);
+  delayMicroseconds(10);//Enviamos un pulso de 10us
+  digitalWrite(Trigger, LOW);
+  
+  time = pulseIn(Echo, HIGH); //obtenemos el ancho del pulso (tiempo)
+  distance = t/59;//Obtenemos distancia en cm
+
+  switch(boton){
+    case '1':
+      this.to15Degrees(((distance<H1)?1:-1));
+    break;
+    case '2':
+      this.to25Degrees(((distance<H2)?1:-1));
+    break;
+    case '3':
+      this.to45Degrees(((distance<H3)?1:-1));
+    break;
+  }
+} 
+  
+void to15Degrees(int dir){//dir = 1/-1
+  this.toDegrees(dir, H1);
+}
+
+void to25Degrees(int dir){
+  this.toDegrees(dir, H2);
+}
+
+void to45Degrees(int dir){
+  this.toDegrees(dir, H3);
+}
+
+
+//It is ok, but you are going to change from
+  sign, because if the current high is
+  	- more than the needed - izq (negative numbers-bajar)
+  	- less than needed - der (positive numbers-subir)
+  It will be applied to the multiplier of the motor
+
+void toDegrees(int dir, double high){//dir = 1/-1
+  int pasos = 0; 
+  int multiplier = 0;
+
+  while(distance!= high){
+  	motor(pasos);//and that is going to increase or reduce the high
+  	pasos += (dir*STEPS*multiplier);
+  	multiplier++;
+  }
+  stepper.step(96);
+  //without delay, because of the ultrasonic sensor
+}
+
+
+NOTES
+
+//distance < H1. Pienso que debería ser != porque como pude ser mayor o menor,para redudcir condiciones
+//de if((dir == 1 && distance < H1) || (dir == -1 && distance > H1))
