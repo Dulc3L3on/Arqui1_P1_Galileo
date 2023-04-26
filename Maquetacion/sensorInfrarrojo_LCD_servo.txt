@@ -1,0 +1,119 @@
+#include <Adafruit_LiquidCrystal.h>
+
+////////Infrareds
+//Dec. Pines
+int[] infrared_inputs = {2,3,4,5};
+int[] infrared_leds = {12,13,14,15};
+int index = 0;
+
+//distance (between infrereds)
+double partial_distance = 0.2;
+//time
+double[] partial_times = {0,0,0,0};
+//Velocity
+double[] partial_velocity = {0,0,0,0};
+//Aceleration
+double[] partial_aceleration = {0,0,0,0};
+
+Adafruit_LiquidCrystal lcd(0);
+
+void setup (){
+	//1st
+	pinMode(infrared_input[0], INPUT);
+	pinMode(infrared_led[0], OUTPUT);
+	//2nd
+	pinMode(infrared_input[1], INPUT);
+	pinMode(infrared_led[1], OUTPUT);
+	//3rd
+	pinMode(infrared_input[2], INPUT);
+	pinMode(infrared_led[2], OUTPUT);
+	//1st
+	pinMode(infrared_input[3], INPUT);
+	pinMode(infrared_led[3], OUTPUT);
+
+	startScreen();
+	printReport(int degrees);
+}
+
+void loop(){
+	int input_value = digitalRead(infrared_input[index]);
+
+	if(input_value == 1){
+		partial_times[index] = toSecs(millis());
+		partial_velocity[index] = getVelocity(partial_times[index]);
+		partial_aceleration[index] = getAceleration(partial_times[index]);
+		index++;
+	}
+
+	printReport();
+
+	if(boton == 'D'){
+		//si tuviera que hacer un método para exportar, iría aquí...
+		restart();
+	}
+}
+
+String void getPTimesList(){
+	return ((String)partial_times[0] 
+	  + ", " + (String)partial_times[1]
+	  + ", " + (String)partial_times[2]
+	  + ", " + (String)partial_times[3]);
+}
+
+double toSecs(int miliseconds){
+	return (miliseconds * 0.001);
+}
+
+String void getVelocityList(){
+	return ((String)partial_velocity[0] 
+	  + ", " + (String)partial_velocity[1]
+	  + ", " + (String)partial_velocity[2]
+	  + ", " + (String)partial_velocity[3]);
+}
+
+int getVelocity(double time){
+	return (distance/time);
+}
+
+String void getAcelerationList(){
+	return ((String)partial_aceleration[0] 
+	  + ", " + (String)partial_aceleration[1]
+	  + ", " + (String)partial_aceleration[2]
+	  + ", " + (String)partial_aceleration[3]);
+}
+
+int getAceleration(double time){
+	return (2*distance/(time*time));
+}
+
+void startScreen(){
+  lcd.clear();
+  lcd.begin(16, 2);
+
+  lcd.setCursor(0, 0);
+  lcd.print("Galieos's experiment");
+  lcd.setCursor(0, 1);
+  lcd.print("S = 1/2*a*t^2");
+  delay(350);
+}
+
+void printReport(int degrees){
+  lcd.clear();
+  lcd.begin(16, 2);
+
+  lcd.setCursor(0, 0);
+  lcd.print("REPORT" +"("+ (String)degrees+")");	
+  lcd.setCursor(0, 1);
+  lcd.print("Times: " + getPTimesList());	
+  lcd.print("Velocity: " + getVelocityList());	
+  lcd.print("Aceleration: " + getAcelerationList());	
+}
+
+void restart(){
+	lcd.clear();
+	index = 0 ;
+	partial_times[0];
+	partial_times[1];
+	partial_times[2];
+	partial_times[3];
+}

@@ -1,0 +1,270 @@
+//libraries of modules
+#include <Keypad.h>
+#include <Stepper.h>
+#include <Servo.h>
+
+//Params of dc motor
+#define STEPS 96
+#define SPEED 100
+
+//Motor configuration
+Stepper stepper(STEPS, 14, 15, 16, 17);
+
+//HSR04  module params
+const int Trigger = 2;
+const int Echo = 3;
+double time;
+double distance = 0.00;  //distance
+
+//highs on centimeters
+const double H1 = 10;  //15.53
+const double H2 = 20;
+const double H3 = 38;  //42.43
+double errorPercentage = 2.0;
+
+//Infrareds
+//Declaration
+int[] infrared_inputs = {2,3,4,5};
+int[] infrared_leds = {12,13,14,15};
+int index = 0;
+
+//distance (between infrereds)
+double partial_distance = 0.2;
+//time
+double[] partial_times = {0,0,0,0};
+//Velocity
+double[] partial_velocity = {0,0,0,0};
+//Aceleration
+double[] partial_aceleration = {0,0,0,0};
+
+//Matricial keyboar configs
+byte rows[4] = { 13, 12, 11, 10 };
+byte columns[4] = { 9, 8, 7, 6 };
+char opciones[4][4] = {
+  { '1', '2', '3', 'A' },
+  { '4', '5', '6', 'B' },
+  { '7', '8', '9', 'C' },
+  { '*', '0', '#', 'D' }
+};
+
+Keypad teclado = Keypad(makeKeymap(opciones), rows, columns, 4, 4);
+char boton;
+
+//Servo
+Servo servoMotor;
+int HOLD = 180;
+int LEAVE = 90;
+
+void setup() {
+  //Config of serial port
+  Serial.begin(9600);
+
+  //HSR04 module pins
+  pinMode(Trigger, OUTPUT);
+  pinMode(Echo, INPUT);
+  digitalWrite(Trigger, LOW);
+
+  stepper.setSpeed(SPEED);  //Motor speed
+
+  /*Infrereds*/
+  //1st
+   pinMode(infrared_input[0], INPUT);
+   pinMode(infrared_led[0], OUTPUT);
+  //2nd
+   pinMode(infrared_input[1], INPUT);
+   pinMode(infrared_led[1], OUTPUT);
+  //3rd
+   pinMode(infrared_input[2], INPUT);
+   pinMode(infrared_led[2], OUTPUT);
+  //4th
+   pinMode(infrared_input[3], INPUT);
+   pinMode(infrared_led[3], OUTPUT);
+
+   servoMotor.attach(9);
+
+   startScreen();
+}
+
+void loop() {
+  //Calcular la distancia de la plataforma
+  calcDistance();Serial.println(distance);
+
+  //Obtener el valor del boton del teclado
+  boton = teclado.getKey();
+  //stepper.step(-12);
+
+  infrareds_behavior();
+
+  switch (boton) {
+    case '1':
+      leaveBall();
+      Serial.println(distance);
+      to15Degrees(((distance < H1) ? 1 : -1));
+      boton = " ";
+      break;
+    case '2':
+      leaveBall();
+      to25Degrees(((distance < H2) ? 1 : -1));
+      boton = " ";
+      break;
+    case '3':
+      leaveBall();
+      to45Degrees(((distance < H3) ? 1 : -1));
+      boton = " ";
+      break;
+    case 'D':
+      //si tuviera que hacer un método para exportar, iría aquí...
+      restart();
+    break;
+  }
+}
+
+void leaveBall(){
+  servoMotor.write(HOLD);
+  delay(15);
+  servoMotor.write(LEAVE);
+}
+
+void calcDistance() {
+  digitalWrite(Trigger, HIGH);
+  delayMicroseconds(10);  //Enviamos un pulso de 10us
+  digitalWrite(Trigger, LOW);
+
+  time = pulseIn(Echo, HIGH);  //obtenemos el ancho del pulso (tiempo)
+  distance = time / 59;        //Obtenemos distancia en cm
+}
+
+void to15Degrees(int dir) {  //dir = 1/-1 => rotate direction
+  toDegrees(dir, H1);
+}
+
+void to25Degrees(int dir) {
+  toDegrees(dir, H2);
+}
+
+void to45Degrees(int dir) {
+  toDegrees(dir, H3);
+}
+
+//It is ok, but you are going to change from
+//  sign, because if the current high is
+//  	- more than the needed - izq (negative numbers-bajar)
+//  	- less than needed - der (positive numbers-subir)
+//  It will be applied to the multiplier of the motor
+
+void toDegrees(int dir, double high) {  //dir = 1/-1
+  calcDistance();
+  if (dir == -1) {
+    //Baja la plataforma
+    Serial.println("Baja plataforma");
+    Serial.println(high);
+    while (!isWithinError(high, distance, errorPercentage)) {
+      stepper.step(-12);
+      calcDistance();
+      Serial.println(distance);
+      
+    }
+  } else {
+    //Sube la platarforma
+    Serial.println("Sube plataforma");
+    Serial.println(high);
+    while (!isWithinError(high, distance, errorPercentage)) {
+      stepper.step(12);
+      calcDistance();
+      Serial.println(distance);
+      
+    }
+  }
+}
+
+bool isWithinError(double val1, double val2, double errorPercentage) {
+  double diff = fabs(val1 - val2);
+  double avg = (fabs(val1) + fabs(val2)) / 2.0;
+  double error = avg * (errorPercentage / 100.0);
+  return diff <= error;
+}
+
+void infrareds_behavior(){
+   int input_value = digitalRead(infrared_input[index]);
+
+   if(input_value == 1){
+	partial_times[index] = toSecs(millis());
+	partial_velocity[index] = getVelocity(partial_times[index]);
+	partial_aceleration[index] = getAceleration(partial_times[index]);
+	index++;
+   }
+
+   printReport();
+
+   if(boton == 'D'){
+	//si tuviera que hacer un método para exportar, iría aquí...
+	restart();
+   }
+}
+
+String void getPTimesList(){
+	return ((String)partial_times[0] 
+	  + ", " + (String)partial_times[1]
+	  + ", " + (String)partial_times[2]
+	  + ", " + (String)partial_times[3]);
+}
+
+double toSecs(int miliseconds){
+	return (miliseconds * 0.001);
+}
+
+String void getVelocityList(){
+	return ((String)partial_velocity[0] 
+	  + ", " + (String)partial_velocity[1]
+	  + ", " + (String)partial_velocity[2]
+	  + ", " + (String)partial_velocity[3]);
+}
+
+int getVelocity(double time){
+	return (distance/time);
+}
+
+String void getAcelerationList(){
+	return ((String)partial_aceleration[0] 
+	  + ", " + (String)partial_aceleration[1]
+	  + ", " + (String)partial_aceleration[2]
+	  + ", " + (String)partial_aceleration[3]);
+}
+
+int getAceleration(double time){
+	return (2*distance/(time*time));
+}
+
+void startScreen(){
+  lcd.clear();
+  lcd.begin(16, 2);
+
+  lcd.setCursor(0, 0);
+  lcd.print("Galieos's experiment");
+  lcd.setCursor(0, 1);
+  lcd.print("S = 1/2*a*t^2");
+  delay(350);
+}
+
+void printReport(int degrees){
+  lcd.clear();
+  lcd.begin(16, 2);
+
+  lcd.setCursor(0, 0);
+  lcd.print("REPORT" +"("+ (String)degrees+")");	
+  lcd.setCursor(0, 1);
+  lcd.print("Times: " + getPTimesList());	
+  lcd.print("Velocity: " + getVelocityList());	
+  lcd.print("Aceleration: " + getAcelerationList());
+}
+
+void restart(){
+  lcd.clear();
+  index = 0 ;
+  partial_times[0];
+  partial_times[1];
+  partial_times[2];
+  partial_times[3];
+}
+
+
