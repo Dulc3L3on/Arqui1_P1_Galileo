@@ -94,7 +94,7 @@ if archivo is not None:
     st.markdown("#### Tiempos (segundos):")
     st.dataframe(data)
 
-    st.markdown("#### Aceleraciones (m/s):")
+    st.markdown("#### Aceleraciones (m/s^2):")
     st.dataframe(dataResultados)
 
     print("TIEMPOS")
