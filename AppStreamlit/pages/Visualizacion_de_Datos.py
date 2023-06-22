@@ -78,18 +78,13 @@ if archivo is not None:
     for n in range(4):
         tiempos_3.append(data[n][2])
 
-    tiempos_4 = []
-    for n in range(4):
-        tiempos_4.append(data[n][3])
-
     aceleraciones = []
     aceleraciones.append(calcularAceleraciones(distancias, tiempos_1))
     aceleraciones.append(calcularAceleraciones(distancias, tiempos_2))
     aceleraciones.append(calcularAceleraciones(distancias, tiempos_3))
-    aceleraciones.append(calcularAceleraciones(distancias, tiempos_4))
     dataResultados = pandas.DataFrame(aceleraciones)
 
-    tiempos = [tiempos_1, tiempos_2, tiempos_3, tiempos_4]
+    tiempos = [tiempos_1, tiempos_2, tiempos_3]
 
     st.markdown("#### Tiempos (segundos):")
     st.dataframe(data)
@@ -97,12 +92,8 @@ if archivo is not None:
     st.markdown("#### Aceleraciones (m/s^2):")
     st.dataframe(dataResultados)
 
-    print("TIEMPOS")
-    print(tiempos_1)
-    print(calcularDiferenciasDeTiempo(tiempos_1))
-
     st.subheader("Graficas: tiempo vs distancia")
-    for n in range(4):
+    for n in range(3):
         grafica = plt.figure()
         plt.style.use("fivethirtyeight")
         plt.bar(('1 - 0.16','2 - 0.18','3 - 0.16'), calcularDiferenciasDeTiempo(tiempos[n]), width=0.1)
@@ -113,7 +104,7 @@ if archivo is not None:
         st.pyplot(grafica)
 
     st.subheader("Graficas: aceleracion vs distancia")
-    for n in range(4):
+    for n in range(3):
         grafica = plt.figure()
         plt.style.use("fivethirtyeight")
         plt.bar(aceleraciones[n], calcularDiferenciasDeTiempo(tiempos[n]), width=0.1)
@@ -125,7 +116,7 @@ if archivo is not None:
 
 
     st.subheader("Graficas: velocidad vs distancia")
-    for n in range(4):
+    for n in range(3):
         grafica = plt.figure()
         plt.style.use("fivethirtyeight")
         plt.bar(calcularVelocidades(aceleraciones[n],calcularDiferenciasDeTiempo(tiempos[n])), calcularDiferenciasDeTiempo(tiempos[n]), width=0.1)

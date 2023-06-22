@@ -78,7 +78,7 @@ void setup() {
 
 void loop() {
   //Calcular la distancia de la plataforma
-  calcDistance();  //Serial.println(distance);
+  calcDistance();  Serial.println(distance);
   //Obtener el valor del boton del teclado
   boton = teclado.getKey();
   //stepper.step(-12);
@@ -87,7 +87,7 @@ void loop() {
       to15Degrees(((distance < H1) ? 1 : -1));
       boton = " ";
       break;
-    case '2':
+    case '6':
       to25Degrees(((distance < H2) ? 1 : -1));
       boton = " ";
       break;
@@ -215,7 +215,7 @@ void iniciarMedicion() {
   lcd.setCursor(0, 1);
   lcd.print(resultado);
   Serial.println(resultado);
-  delay(4000);
+  delay(10000);
   lcd.clear();
   opcionesLCD();
 }
@@ -224,7 +224,7 @@ void opcionesLCD(){
   lcd.setCursor(0, 0);
   lcd.print("Op: ");
   lcd.print("1:15' ");
-  lcd.print("2:20' ");
+  lcd.print("6:20' ");
   lcd.setCursor(0, 1);
   lcd.print("3:45' ");
   lcd.print("4:init");
